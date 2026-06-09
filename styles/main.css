@@ -221,10 +221,10 @@ html, body {
   align-items: stretch;
 }
 
-/* Right column: 2 case cards stacked */
+/* Right column: 2×2 grid of case cards */
 .case-cards-col {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--sp-3);
 }
 
@@ -249,7 +249,8 @@ html, body {
 }
 .case-card--urgent::before  { background: var(--danger); }
 .case-card--waiting::before { background: var(--warn); }
-.case-card--pending::before { background: var(--info); }
+.case-card--pending::before  { background: var(--danger); }
+.case-card--cleared::before  { background: var(--ok); }
 
 .case-card-icon {
   font-size: 28px;
@@ -278,11 +279,26 @@ html, body {
 }
 .case-card--urgent .case-card-value  { color: var(--danger-text); }
 .case-card--waiting .case-card-value { color: var(--warn-text); }
-.case-card--pending .case-card-value { color: var(--info-text); }
+.case-card--pending .case-card-value  { color: var(--danger-text); }
+.case-card--cleared .case-card-value  { color: var(--ok-text); }
 
 .case-card-sub {
   font-size: 11px;
   color: var(--text-subtle);
+}
+
+/* Alert style for ยังไม่ได้เคลียร์ */
+.case-card--pending {
+  background: var(--danger-dim);
+  border-color: var(--danger);
+}
+.case-card--pending .case-card-label { color: var(--danger-text); }
+.case-card--pending .case-card-sub   { color: var(--danger-text); opacity: .7; }
+.case-card--pending .case-card-icon  { animation: alertpulse 1.6s ease-in-out infinite; }
+
+@keyframes alertpulse {
+  0%, 100% { transform: scale(1);    opacity: .8; }
+  50%       { transform: scale(1.18); opacity: 1;  }
 }
 
 /* ---- Tab Bar ---- */

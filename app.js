@@ -334,6 +334,7 @@ function renderCaseCards(kpis) {
   if (!col) return;
 
   col.innerHTML = `
+    <!-- Row 1 -->
     <div class="case-card case-card--urgent">
       <div class="case-card-icon">⏰</div>
       <div class="case-card-body">
@@ -342,6 +343,15 @@ function renderCaseCards(kpis) {
         <div class="case-card-sub">เอกสารที่บันทึก Diff วันนี้</div>
       </div>
     </div>
+    <div class="case-card case-card--pending">
+      <div class="case-card-icon">🚨</div>
+      <div class="case-card-body">
+        <div class="case-card-label">ยังไม่ได้เคลียร์</div>
+        <div class="case-card-value">${formatNum(kpis.notCleared)}</div>
+        <div class="case-card-sub">เอกสารขาด/เกินที่ยังไม่มี R008</div>
+      </div>
+    </div>
+    <!-- Row 2 -->
     <div class="case-card case-card--waiting">
       <div class="case-card-icon">🔍</div>
       <div class="case-card-body">
@@ -350,12 +360,12 @@ function renderCaseCards(kpis) {
         <div class="case-card-sub">สาเหตุ R008: กำลังตรวจสอบ</div>
       </div>
     </div>
-    <div class="case-card case-card--pending">
-      <div class="case-card-icon">📋</div>
+    <div class="case-card case-card--cleared">
+      <div class="case-card-icon">✅</div>
       <div class="case-card-body">
-        <div class="case-card-label">ยังไม่ได้เคลียร์</div>
-        <div class="case-card-value">${formatNum(kpis.notCleared)}</div>
-        <div class="case-card-sub">เอกสารขาด/เกินที่ยังไม่มี R008</div>
+        <div class="case-card-label">เคลียร์เคสแล้ว</div>
+        <div class="case-card-value">${formatNum(kpis.clearedCases)}</div>
+        <div class="case-card-sub">มีจำนวนขาด/เกิน และมี R008</div>
       </div>
     </div>
   `;
