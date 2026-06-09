@@ -1,0 +1,16 @@
+# Excel source files — stay local, never push
+data/*.xlsx
+
+# Node
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Hash cache
+.last-hash
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outbound DC Report — GR3-008</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap">
+
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/components.css">
+
+  <!-- SheetJS — must load before app.js module (provides window.XLSX) -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       APP SHELL — grid layout injected here
+       app.js fills topbar, sidebar, main-content via DOM
+       ============================================================ -->
+  <div id="app">
+
+    <!-- Top bar (filled by app.js) -->
+    <header id="topbar"></header>
+
+    <!-- Left sidebar (filled by app.js) -->
+    <nav id="sidebar"></nav>
+
+    <!-- Main scrollable area (filled by app.js) -->
+    <main id="main-content"></main>
+
+  </div>
+
+  <!-- App module — loaded after CDN scripts are ready -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>

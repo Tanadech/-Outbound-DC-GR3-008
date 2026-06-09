@@ -1,0 +1,14 @@
+{
+  "name": "gr3-008-dc-report",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GR3-008 Outbound DC Report — Auto Update System",
+  "scripts": {
+    "convert": "node convert.js",
+    "watch": "node watch.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "xlsx": "^0.18.5"
+  }
+}

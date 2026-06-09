@@ -1,0 +1,151 @@
+/* ============================================================
+   DESIGN TOKENS — WMS Corporate / Glass Morphism Dark
+   ============================================================ */
+:root {
+  /* Background */
+  --bg:              #0d1a2e;
+  --bg-overlay:      rgba(0,0,0,.55);
+
+  /* Surface */
+  --surface:         rgba(255,255,255,.04);
+  --surface-2:       rgba(255,255,255,.055);
+  --surface-hover:   rgba(255,255,255,.07);
+
+  /* Border */
+  --border:          rgba(56,189,248,.10);
+  --border-accent:   rgba(56,189,248,.28);
+  --border-subtle:   rgba(255,255,255,.05);
+
+  /* Text */
+  --text-primary:    #f1f5f9;
+  --text-muted:      #9db5cc;
+  --text-subtle:     #5d7a96;
+
+  /* Accent */
+  --accent:          #38bdf8;
+  --accent-glow:     rgba(56,189,248,.15);
+
+  /* Status */
+  --ok:              #10b981;
+  --ok-dim:          rgba(16,185,129,.15);
+  --ok-text:         #34d399;
+
+  --warn:            #f59e0b;
+  --warn-dim:        rgba(245,158,11,.15);
+  --warn-text:       #fbbf24;
+
+  --danger:          #ef4444;
+  --danger-dim:      rgba(239,68,68,.15);
+  --danger-text:     #f87171;
+
+  --info:            #38bdf8;
+  --info-dim:        rgba(56,189,248,.15);
+  --info-text:       #7dd3fc;
+
+  --purple:          #a78bfa;
+  --purple-dim:      rgba(167,139,250,.15);
+  --purple-text:     #c4b5fd;
+
+  --grey:            #94a3b8;
+  --grey-dim:        rgba(100,116,139,.15);
+  --grey-text:       #94a3b8;
+
+  /* Topbar */
+  --topbar-from:     #020811;
+  --topbar-mid:      #081829;
+  --topbar-to:       #0c2240;
+
+  /* Sidebar */
+  --sidebar-bg:          #ffffff;
+  --sidebar-shadow:      rgba(145,158,171,.16);
+  --sidebar-active-bg:   #FEF4D4;
+  --sidebar-active-brd:  #FED680;
+  --sidebar-active-txt:  #B66816;
+  --sidebar-txt:         #637381;
+  --sidebar-hover:       #1C252E;
+  --sidebar-line:        #DFE3E8;
+  --brand:               #fda92d;
+  --brand-dark:          #B66816;
+
+  /* Typography */
+  --font:      "Sarabun", "Prompt", -apple-system, sans-serif;
+  --font-mono: Consolas, monospace;
+
+  /* Spacing (8px grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Border radius */
+  --r-sm:  6px;
+  --r-md:  9px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+
+  /* Shadows */
+  --shadow-card:  0 4px 20px rgba(0,0,0,.4);
+  --shadow-kpi:   0 2px 12px rgba(0,0,0,.3);
+  --shadow-modal: 0 24px 70px rgba(0,0,0,.7);
+
+  /* Transitions */
+  --trans: 150ms ease;
+}
+
+/* ============================================================
+   LIGHT MODE OVERRIDES
+   ============================================================ */
+[data-theme="light"] {
+  --bg:            #F4F6F8;
+  --bg-overlay:    rgba(0,0,0,.4);
+
+  --surface:       #FFFFFF;
+  --surface-2:     #F4F6F8;
+  --surface-hover: #F0F2F4;
+
+  --border:        rgba(0,0,0,.08);
+  --border-accent: rgba(253,169,45,.30);
+  --border-subtle: rgba(0,0,0,.05);
+
+  --text-primary:  #1C252E;
+  --text-muted:    #637381;
+  --text-subtle:   #919EAB;
+
+  --accent:        #fda92d;
+  --accent-glow:   rgba(253,169,45,.15);
+
+  --ok:              #22C55E;
+  --ok-dim:          rgba(34,197,94,.12);
+  --ok-text:         #15803d;
+
+  --warn:            #FFAB00;
+  --warn-dim:        rgba(255,171,0,.12);
+  --warn-text:       #B76E00;
+
+  --danger:          #FF5630;
+  --danger-dim:      rgba(255,86,48,.12);
+  --danger-text:     #B71D18;
+
+  --info:            #00B8D9;
+  --info-dim:        rgba(0,184,217,.12);
+  --info-text:       #006C9C;
+
+  --purple:          #7c3aed;
+  --purple-dim:      rgba(124,58,237,.12);
+  --purple-text:     #5B0FA8;
+
+  --grey:            #637381;
+  --grey-dim:        rgba(99,115,129,.12);
+  --grey-text:       #454F5B;
+
+  --topbar-from:   #1e3a5f;
+  --topbar-mid:    #1e40af;
+  --topbar-to:     #1d4ed8;
+
+  --shadow-card:  0 1px 4px rgba(145,158,171,.16);
+  --shadow-kpi:   0 1px 4px rgba(145,158,171,.12);
+  --shadow-modal: 0 24px 64px rgba(0,0,0,.25);
+}
