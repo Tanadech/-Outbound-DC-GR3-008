@@ -5,52 +5,95 @@ export const CONFIG = {
   FILES: {
     main: './data/data outbound dc.xlsx',
     diff: './data/data outbound diff.xlsx',
+    json: './data/data.json',
   },
 
-  /* Column index mappings for main xlsx sheet */
+  /* ── Column header names (ชื่อจริงใน Excel)
+     ระบบจะค้นหา index จากชื่อนี้อัตโนมัติ
+     ถ้าข้อมูลใหม่มีคอลัมน์เพิ่ม/เรียงใหม่ → แก้แค่ตรงนี้ ──────── */
+  COL_NAMES: {
+    DOC_NO:      'เลขที่เอกสาร',
+    QUEUE_NO:    'เลขที่คิวงาน',
+    BRANCH:      'ชื่อสาขา',
+    TRUCK_TYPE:  'ประเภทรถ',
+    JOB_TYPE:    'ประเภทงาน',
+    QUEUE_DATE:  'วันที่คิวงาน',
+    TIME_SLOT:   'ช่วงเวลา',
+    LICENSE:     'ป้ายทะเบียน',
+    DRIVER:      'ชื่อคนขับ',
+    PHONE:       'เบอร์โทร',
+    GATE_T2:     'ประตู T2',
+    GATE_T3:     'ประตู T3',
+    TIME_T3:     'เวลา T3',
+    ARRIVE_DATE: 'วันที่ถึงสาขา',
+    REC_T3:      'ผู้บันทึก T3',
+    REC_RECV:    'ผู้บันทึกรับสินค้า',
+    SCAN_SEND:   'จำนวนกล่องสแกนส่ง',
+    SCAN_RECV:   'จำนวนกล่องสแกนรับ',
+    DIFF_SHORT:  'จำนวนขาด',
+    DIFF_OVER:   'จำนวนเกิน',
+    R008:        'R008',
+    R008_REASON: 'สาเหตุของ R008',
+    R008_REC:    'ผู้บันทึก R008',
+    R008_DATE:   'วันที่บันทึก R008',
+  },
+
+  DIFF_COL_NAMES: {
+    DOC_NO:      'outbound_docuno',
+    PRODUCT:     'product_code',
+    BARCODE:     'barcode',
+    DIFF_QTY:    'diff_quantity',
+    REASON:      'reason',
+    BRANCH_CODE: 'branch_code',
+    BRANCH_NAME: 'branch_name',
+    EMP_CODE:    'employee_code',
+    SAVE_TIME:   'save_time',
+    EMP_APPROVE: 'employee_approve',
+    QUANTITY:    'quantity',
+  },
+
+  /* ── Fallback index (ใช้เมื่อหาชื่อ header ไม่เจอ) ─────────── */
   COL: {
-    DOC_NO:       0,   // เลขที่เอกสาร
-    QUEUE_NO:     1,   // เลขที่คิวงาน
-    BRANCH:       2,   // ชื่อสาขา
-    TRUCK_TYPE:   3,   // ประเภทรถ
-    JOB_TYPE:     4,   // ประเภทงาน
-    QUEUE_DATE:   5,   // วันที่คิวงาน
-    TIME_SLOT:    6,   // ช่วงเวลา
-    LICENSE:      7,   // ป้ายทะเบียน
-    DRIVER:       8,   // ชื่อคนขับ
-    PHONE:        9,   // เบอร์โทร
-    GATE_T2:      10,  // ประตู T2
-    GATE_T3:      11,  // ประตู T3
-    TIME_T3:      12,  // เวลา T3
-    ARRIVE_DATE:  13,  // วันที่ถึงสาขา
-    REC_T3:       14,  // ผู้บันทึก T3
-    REC_RECV:     15,  // ผู้บันทึกรับสินค้า
-    SCAN_SEND:    16,  // จำนวนกล่องสแกนส่ง
-    SCAN_RECV:    17,  // จำนวนกล่องสแกนรับ
-    DIFF_SHORT:   18,  // จำนวนขาด
-    DIFF_OVER:    19,  // จำนวนเกิน
-    R008:         20,  // R008 (สแกนนับหยาบ)
-    R008_REASON:  21,  // สาเหตุของ R008
-    R008_REC:     22,  // ผู้บันทึก R008
-    R008_DATE:    23,  // วันที่บันทึก R008
+    DOC_NO:       0,
+    QUEUE_NO:     1,
+    BRANCH:       2,
+    TRUCK_TYPE:   3,
+    JOB_TYPE:     4,
+    QUEUE_DATE:   5,
+    TIME_SLOT:    6,
+    LICENSE:      7,
+    DRIVER:       8,
+    PHONE:        9,
+    GATE_T2:      10,
+    GATE_T3:      11,
+    TIME_T3:      12,
+    ARRIVE_DATE:  13,
+    REC_T3:       14,
+    REC_RECV:     15,
+    SCAN_SEND:    16,
+    SCAN_RECV:    17,
+    DIFF_SHORT:   18,
+    DIFF_OVER:    19,
+    R008:         20,
+    R008_REASON:  21,
+    R008_REC:     22,
+    R008_DATE:    23,
   },
 
-  /* Column index mappings for diff xlsx sheet */
   DIFF_COL: {
-    DOC_NO:       0,   // outbound_docuno
-    PRODUCT:      1,   // product_code
-    BARCODE:      2,   // barcode
-    DIFF_QTY:     3,   // diff_quantity
-    REASON:       4,   // reason
-    BRANCH_CODE:  5,   // branch_code
-    BRANCH_NAME:  6,   // branch_name
-    EMP_CODE:     7,   // employee_code
-    SAVE_TIME:    8,   // save_time
-    EMP_APPROVE:  9,   // employee_approve
-    QUANTITY:     10,  // quantity
+    DOC_NO:       0,
+    PRODUCT:      1,
+    BARCODE:      2,
+    DIFF_QTY:     3,
+    REASON:       4,
+    BRANCH_CODE:  5,
+    BRANCH_NAME:  6,
+    EMP_CODE:     7,
+    SAVE_TIME:    8,
+    EMP_APPROVE:  9,
+    QUANTITY:     10,
   },
 
-  /* Status definitions — code maps to CSS class .status-pill.{code} */
   STATUS: {
     S0: { code: 's0', label: 'รอจัดสินค้า',          color: 'danger' },
     S1: { code: 's1', label: 'จัดสินค้าเรียบร้อย',   color: 'info'   },
@@ -58,18 +101,10 @@ export const CONFIG = {
     S4: { code: 's4', label: 'ประมวลผลผิดพลาด',       color: 'purple' },
   },
 
-  /* Time slot sort order for charts */
   TIME_SLOTS: [
-    '00.30-03.30',
-    '08.30-10.30',
-    '08.30-11.30',
-    '10.30-12.30',
-    '11.30-14.30',
-    '13.30-15.30',
-    '14.30-17.30',
-    '15.30-17.30',
-    '18.30-21.30',
-    '21.30-00.30',
+    '00.30-03.30', '08.30-10.30', '08.30-11.30', '10.30-12.30',
+    '11.30-14.30', '13.30-15.30', '14.30-17.30', '15.30-17.30',
+    '18.30-21.30', '21.30-00.30',
   ],
 
   PAGE_SIZE_OPTIONS: [25, 50, 100, 200],

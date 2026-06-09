@@ -161,7 +161,7 @@ async function loadData() {
       ]);
     }
 
-    const allData      = processData(mainResult.rows, diffResult.rows);
+    const allData      = processData(mainResult.rows, diffResult.rows, mainResult.headers ?? [], diffResult.headers ?? []);
     const shortageData = filterShortageRecords(allData);
     const kpis         = computeKPIs(allData, shortageData, diffResult.rows);
 
