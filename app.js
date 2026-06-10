@@ -365,7 +365,7 @@ function renderCaseCards(kpis) {
       <div class="case-card-body">
         <div class="case-card-label">เคลียร์เคสแล้ว</div>
         <div class="case-card-value">${formatNum(kpis.clearedCases)}</div>
-        <div class="case-card-sub">มีจำนวนขาด/เกิน และมี R008</div>
+        <div class="case-card-sub">เอกสารขาด/เกิน ที่มีผล R008 แล้ว</div>
       </div>
     </div>
   `;
