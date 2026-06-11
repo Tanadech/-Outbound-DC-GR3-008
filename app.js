@@ -457,8 +457,8 @@ function renderBranchSummary(shortageData) {
     docCount:      b.docs.length,
     sumShort:      b.docs.reduce((s, d) => s + (d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort), 0),
     sumOver:       b.docs.reduce((s, d) => s + (d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver),  0),
-    r008Done:      b.docs.filter(d => d.r008).length,
-    r008None:      b.docs.filter(d => !d.r008).length,
+    r008Done:      b.docs.filter(d => d.r008Rec && d.r008Date).length,
+    r008None:      b.docs.filter(d => !d.r008Rec && !d.r008Date).length,
     totalDiffItems: b.docs.reduce((s, d) => s + d.diffItems.length, 0),
     wh1:           b.docs.filter(d => d.warehouse.includes('WH1')).length,
     wh2:           b.docs.filter(d => d.warehouse.includes('WH2')).length,
@@ -512,8 +512,8 @@ function renderBranchSummary(shortageData) {
           <th class="td-center">รวมเกิน (ชิ้น)</th>
           <th class="td-center">รวม Diff</th>
           <th class="td-center">วันล่าช้า</th>
-          <th class="td-center">R008 แล้ว</th>
-          <th class="td-center">ยังไม่ R008</th>
+          <th class="td-center">บันทึก R008</th>
+          <th class="td-center">ไม่บันทึก R008</th>
         </tr></thead>
         <tbody>
           ${summaries.map((b, i) => `
