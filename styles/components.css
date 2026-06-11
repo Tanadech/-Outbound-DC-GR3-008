@@ -296,8 +296,8 @@ status-pill { display: inline-block; }
 
 .td-mono    { font-family: var(--font-mono); font-size: 11px; }
 .td-muted   { color: var(--text-muted); }
-.td-center  { text-align: center; }
-.td-right   { text-align: right; }
+.td-center, th.td-center { text-align: center; }
+.td-right,  th.td-right  { text-align: right; }
 .td-num {
   font-family: var(--font-mono);
   text-align: right;
