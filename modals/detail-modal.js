@@ -11,6 +11,8 @@ import { formatDate, formatNum, esc, diffCategoryMeta } from '../lib/helpers.js'
 
 export class DetailModal extends HTMLElement {
   connectedCallback() {
+    if (this._init) return;
+    this._init = true;
     this.style.display = 'none';
     document.addEventListener('wms:modal-open',  e  => this._open(e.detail));
     document.addEventListener('wms:modal-close', () => this._close());
@@ -19,6 +21,7 @@ export class DetailModal extends HTMLElement {
 
   _open(row) {
     this._render(row);
+    document.body.appendChild(this); // always last in DOM = always on top
     this.style.display = '';
     document.body.style.overflow = 'hidden';
   }

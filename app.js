@@ -633,7 +633,7 @@ function showBranchDocsModal(docs, branchName) {
   overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
     tr.addEventListener('click', () => {
       const row = docs.find(d => d.docNo === tr.dataset.doc);
-      if (row) { close(); openModal(row); }
+      if (row) openModal(row);
     });
   });
 }
