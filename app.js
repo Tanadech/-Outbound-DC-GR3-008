@@ -478,9 +478,9 @@ function renderBranchSummary(shortageData) {
       <table class="data-table">
         <thead><tr>
           <th>สาขา</th>
-          <th class="td-right">จำนวนเอกสาร</th>
-          <th class="td-right">รวมขาด (ชิ้น)</th>
-          <th class="td-right">รวมเกิน (ชิ้น)</th>
+          <th class="td-center">จำนวนเอกสาร</th>
+          <th class="td-center">รวมขาด (ชิ้น)</th>
+          <th class="td-center">รวมเกิน (ชิ้น)</th>
           <th class="td-center">R008 แล้ว</th>
           <th class="td-center">ยังไม่ R008</th>
         </tr></thead>
@@ -488,13 +488,13 @@ function renderBranchSummary(shortageData) {
           ${summaries.map((b, i) => `
             <tr data-idx="${i}" style="cursor:pointer" title="คลิกดูเอกสาร ${b.docCount} รายการ">
               <td style="font-weight:600;color:var(--text-primary)">${escHtml(b.branch)}</td>
-              <td class="td-right">
+              <td class="td-center">
                 <span style="font-family:var(--font-mono);font-weight:700">${formatNum(b.docCount)}</span>
               </td>
-              <td class="td-right">
+              <td class="td-center">
                 ${b.sumShort > 0 ? `<span class="diff-badge short">${formatNum(b.sumShort)}</span>` : `<span class="td-muted">—</span>`}
               </td>
-              <td class="td-right">
+              <td class="td-center">
                 ${b.sumOver > 0 ? `<span class="diff-badge over">${formatNum(b.sumOver)}</span>` : `<span class="td-muted">—</span>`}
               </td>
               <td class="td-center">
@@ -509,9 +509,9 @@ function renderBranchSummary(shortageData) {
         <tfoot>
           <tr style="font-weight:700;border-top:2px solid var(--border)">
             <td style="color:var(--text-muted);font-size:11px">รวมทั้งหมด</td>
-            <td class="td-right"><span style="font-family:var(--font-mono)">${formatNum(shortageData.length)}</span></td>
-            <td class="td-right">${totalShort > 0 ? `<span class="diff-badge short">${formatNum(totalShort)}</span>` : `<span class="td-muted">—</span>`}</td>
-            <td class="td-right">${totalOver  > 0 ? `<span class="diff-badge over">${formatNum(totalOver)}</span>`   : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center"><span style="font-family:var(--font-mono)">${formatNum(shortageData.length)}</span></td>
+            <td class="td-center">${totalShort > 0 ? `<span class="diff-badge short">${formatNum(totalShort)}</span>` : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center">${totalOver  > 0 ? `<span class="diff-badge over">${formatNum(totalOver)}</span>`   : `<span class="td-muted">—</span>`}</td>
             <td class="td-center">${totalR008 > 0 ? `<span class="diff-badge other" style="background:var(--ok-dim);color:var(--ok-text)">${formatNum(totalR008)}</span>` : `<span class="td-muted">—</span>`}</td>
             <td class="td-center">${totalNone > 0 ? `<span class="diff-badge short">${formatNum(totalNone)}</span>` : `<span class="td-muted">—</span>`}</td>
           </tr>
