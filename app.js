@@ -3,9 +3,9 @@
    ============================================================ */
 import { CONFIG }                   from './data/config.js';
 import { loadXlsx }                 from './lib/xlsx-loader.js';
-import { processData, filterShortageRecords, computeKPIs, applyFilters } from './lib/data-processor.js';
-import { formatNum, formatDate, esc as escHtml } from './lib/helpers.js';
-import { state, setData, setFilteredData, toggleTheme } from './state.js';
+import { processData, filterShortageRecords, computeKPIs } from './lib/data-processor.js';
+import { formatNum, formatDate, esc as escHtml, daysAgo, truncate } from './lib/helpers.js';
+import { state, setData, toggleTheme, openModal } from './state.js';
 
 /* Register custom elements */
 import './components/loading-spinner.js';
@@ -119,10 +119,9 @@ function renderMainContent() {
       <div class="case-cards-col" id="case-cards-col"></div>
     </div>
 
-    <!-- Main table (no tab wrapper) -->
-    <div class="card" id="main-card">
-      <filter-bar id="main-filter-bar"></filter-bar>
-      <data-table  id="main-data-table"></data-table>
+    <!-- Main table — branch summary -->
+    <div class="card" id="main-card" style="padding:0;overflow:hidden">
+      <div id="branch-summary-wrap" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden"></div>
     </div>
 
     <!-- Detail modal (always in DOM) -->
@@ -170,6 +169,7 @@ async function loadData() {
     renderKPIs(kpis);
     renderCharts(shortageData);
     renderCaseCards(kpis);
+    renderBranchSummary(shortageData);
     updateLastUpdate();
 
     document.getElementById('charts-row').style.display = '';
@@ -181,12 +181,6 @@ async function loadData() {
     spinner.remove();
   }
 
-  /* React to filter changes */
-  document.addEventListener('wms:filter-changed', () => {
-    const filtered = applyFilters(state.shortageData, state.filters);
-    setFilteredData(filtered);
-    document.querySelector('filter-bar')?.updateCount?.();
-  });
 }
 
 /* ============================================================
@@ -442,6 +436,206 @@ function showClearedModal(rows) {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
   document.addEventListener('keydown', onEsc);
+}
+
+/* ============================================================
+   BRANCH SUMMARY VIEW
+   ============================================================ */
+function renderBranchSummary(shortageData) {
+  const wrap = document.getElementById('branch-summary-wrap');
+  if (!wrap) return;
+
+  const byBranch = {};
+  for (const d of shortageData) {
+    const key = d.branch || '—';
+    if (!byBranch[key]) byBranch[key] = { branch: key, docs: [] };
+    byBranch[key].docs.push(d);
+  }
+
+  const summaries = Object.values(byBranch).map(b => ({
+    branch:   b.branch,
+    docCount: b.docs.length,
+    sumShort: b.docs.reduce((s, d) => s + (d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort), 0),
+    sumOver:  b.docs.reduce((s, d) => s + (d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver),  0),
+    r008Done: b.docs.filter(d => d.r008).length,
+    r008None: b.docs.filter(d => !d.r008).length,
+    docs:     b.docs,
+  })).sort((a, b) => b.docCount - a.docCount);
+
+  const totalShort = summaries.reduce((s, b) => s + b.sumShort, 0);
+  const totalOver  = summaries.reduce((s, b) => s + b.sumOver,  0);
+  const totalR008  = summaries.reduce((s, b) => s + b.r008Done, 0);
+  const totalNone  = summaries.reduce((s, b) => s + b.r008None, 0);
+
+  wrap.innerHTML = `
+    <div style="padding:12px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;flex:1">
+        สาขาที่มีขาด/เกิน &nbsp;·&nbsp; ${summaries.length} สาขา
+      </span>
+      <span style="font-size:11px;color:var(--text-subtle)">คลิกที่แถวสาขาเพื่อดูรายการเอกสาร</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>สาขา</th>
+          <th class="td-right">จำนวนเอกสาร</th>
+          <th class="td-right">รวมขาด (ชิ้น)</th>
+          <th class="td-right">รวมเกิน (ชิ้น)</th>
+          <th class="td-center">R008 แล้ว</th>
+          <th class="td-center">ยังไม่ R008</th>
+        </tr></thead>
+        <tbody>
+          ${summaries.map((b, i) => `
+            <tr data-idx="${i}" style="cursor:pointer" title="คลิกดูเอกสาร ${b.docCount} รายการ">
+              <td style="font-weight:600;color:var(--text-primary)">${escHtml(b.branch)}</td>
+              <td class="td-right">
+                <span style="font-family:var(--font-mono);font-weight:700">${formatNum(b.docCount)}</span>
+              </td>
+              <td class="td-right">
+                ${b.sumShort > 0 ? `<span class="diff-badge short">${formatNum(b.sumShort)}</span>` : `<span class="td-muted">—</span>`}
+              </td>
+              <td class="td-right">
+                ${b.sumOver > 0 ? `<span class="diff-badge over">${formatNum(b.sumOver)}</span>` : `<span class="td-muted">—</span>`}
+              </td>
+              <td class="td-center">
+                ${b.r008Done > 0 ? `<span class="diff-badge other" style="background:var(--ok-dim);color:var(--ok-text)">${formatNum(b.r008Done)}</span>` : `<span class="td-muted">—</span>`}
+              </td>
+              <td class="td-center">
+                ${b.r008None > 0 ? `<span class="diff-badge short">${formatNum(b.r008None)}</span>` : `<span class="td-muted">—</span>`}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:700;border-top:2px solid var(--border)">
+            <td style="color:var(--text-muted);font-size:11px">รวมทั้งหมด</td>
+            <td class="td-right"><span style="font-family:var(--font-mono)">${formatNum(shortageData.length)}</span></td>
+            <td class="td-right">${totalShort > 0 ? `<span class="diff-badge short">${formatNum(totalShort)}</span>` : `<span class="td-muted">—</span>`}</td>
+            <td class="td-right">${totalOver  > 0 ? `<span class="diff-badge over">${formatNum(totalOver)}</span>`   : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center">${totalR008 > 0 ? `<span class="diff-badge other" style="background:var(--ok-dim);color:var(--ok-text)">${formatNum(totalR008)}</span>` : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center">${totalNone > 0 ? `<span class="diff-badge short">${formatNum(totalNone)}</span>` : `<span class="td-muted">—</span>`}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="page-info">
+        สรุปตามสาขา &nbsp;·&nbsp; <strong>${summaries.length}</strong> สาขา &nbsp;·&nbsp;
+        เอกสารทั้งหมด <strong>${formatNum(shortageData.length)}</strong> รายการ
+      </div>
+    </div>
+  `;
+
+  wrap.querySelectorAll('tbody tr[data-idx]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const b = summaries[+tr.dataset.idx];
+      if (b) showBranchDocsModal(b.docs, b.branch);
+    });
+  });
+}
+
+function showBranchDocsModal(docs, branchName) {
+  document.getElementById('branch-docs-overlay')?.remove();
+
+  const sorted = [...docs].sort((a, b) => {
+    const av = a.queueDate instanceof Date ? a.queueDate.getTime() : Number(a.queueDate ?? 0);
+    const bv = b.queueDate instanceof Date ? b.queueDate.getTime() : Number(b.queueDate ?? 0);
+    return bv - av;
+  });
+
+  const renderDocRow = d => {
+    const shortN = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+    const overN  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+
+    let r008Cell;
+    if (!d.r008) {
+      r008Cell = `<span class="td-muted">—</span>`;
+    } else {
+      const cls = d.r008 === 'ขาดจริง' ? 'short' : d.r008 === 'ไม่ขาดได้ครบ' ? 'over' : 'other';
+      r008Cell = `<span class="diff-badge ${cls}">${escHtml(d.r008)}</span>`;
+    }
+
+    let saveAgeCell;
+    if (!d.diffSaveTime) {
+      saveAgeCell = `<span class="td-muted">—</span>`;
+    } else {
+      const days = daysAgo(d.diffSaveTime);
+      const ageCls  = days === null ? 'other' : days <= 3 ? 'age-ok' : days <= 7 ? 'age-warn' : 'age-old';
+      const ageLabel = days === null ? '?' : `${days} วัน`;
+      saveAgeCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <span class="age-badge ${ageCls}">${ageLabel}</span>
+        <span style="font-size:10px;color:var(--text-subtle);font-family:var(--font-mono)">${formatDate(d.diffSaveTime)}</span>
+      </div>`;
+    }
+
+    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer" title="คลิกดูรายละเอียด">
+      <td class="td-mono"><span style="font-family:var(--font-mono);font-size:11px">${escHtml(d.docNo)}</span></td>
+      <td class="td-mono">${escHtml(formatDate(d.queueDate))}</td>
+      <td><span style="font-family:var(--font-mono);font-size:11px;color:var(--accent)">${escHtml(d.warehouse)}</span></td>
+      <td>${d.recT3   ? escHtml(truncate(String(d.recT3),   20)) : `<span class="td-muted">—</span>`}</td>
+      <td>${d.recRecv ? escHtml(truncate(String(d.recRecv), 20)) : `<span class="td-muted">—</span>`}</td>
+      <td class="td-num td-right">${shortN > 0 ? `<span class="diff-badge short">${formatNum(shortN)}</span>` : `<span class="td-muted">—</span>`}</td>
+      <td class="td-num td-right">${overN  > 0 ? `<span class="diff-badge over">${formatNum(overN)}</span>`   : `<span class="td-muted">—</span>`}</td>
+      <td class="td-center">${r008Cell}</td>
+      <td>${d.r008Reason ? `<span style="font-size:11px">${escHtml(truncate(d.r008Reason, 30))}</span>` : `<span class="td-muted">—</span>`}</td>
+      <td class="td-muted">${d.r008Rec ? `<span style="font-size:11px">${escHtml(truncate(String(d.r008Rec), 20))}</span>` : `<span class="td-muted">—</span>`}</td>
+      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : `<span class="td-muted">—</span>`}</td>
+      <td class="td-center">${saveAgeCell}</td>
+    </tr>`;
+  };
+
+  const overlay = document.createElement('div');
+  overlay.id = 'branch-docs-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:1200px;width:96vw">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">📋 ${escHtml(branchName)}</div>
+          <div class="modal-docno">เอกสารที่มีขาด/เกิน &nbsp;·&nbsp; ${formatNum(docs.length)} รายการ &nbsp;·&nbsp; คลิกเอกสารเพื่อดูรายละเอียด</div>
+        </div>
+        <button class="modal-close" id="branch-docs-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>เลขที่เอกสาร</th>
+              <th>วันที่คิว</th>
+              <th>คลัง</th>
+              <th>ผู้บันทึก DC</th>
+              <th>ผู้บันทึก สาขา</th>
+              <th class="td-right">ขาด (ชิ้น)</th>
+              <th class="td-right">เกิน (ชิ้น)</th>
+              <th class="td-center">R008</th>
+              <th>สาเหตุ R008</th>
+              <th>ผู้บันทึก R008</th>
+              <th class="td-center">รายการ Diff</th>
+              <th class="td-center">วันที่บันทึก Diff</th>
+            </tr></thead>
+            <tbody>${sorted.map(d => renderDocRow(d)).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('branch-docs-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
+
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = docs.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
 }
 
 /* ============================================================
