@@ -10,6 +10,16 @@
 | `data/data outbound diff.xlsx` | `FILES.diff` | ข้อมูล Diff — รายการสินค้าที่ขาด/เกิน ระดับ SKU |
 | `data/data.json` | `FILES.json` | ไฟล์ที่ถูก generate จากทั้ง 2 ไฟล์ข้างบน (ใช้บน GitHub Pages) |
 
+### ที่มาของแต่ละไฟล์
+
+**`data outbound dc.xlsx`**
+Export จาก **WMS (C#)** เมนู **Report Outbound → Transaction Outbound Report**
+ครอบคลุมทุกเอกสาร Outbound ที่ออกจาก DC
+
+**`data outbound diff.xlsx`**
+ดึงจาก **โปรแกรม GR3 (ข้อมูลหลังบ้าน)** โดย **พี่ฝน**
+เป็นข้อมูลระดับ SKU ที่บันทึกความต่างของสินค้าแต่ละรายการ (ขาด/เกิน/ไม่มีในระบบ)
+
 > `data.json` ถูกสร้างโดย `convert.js` และ push ขึ้น GitHub ผ่าน `update-data.bat`
 
 ---
