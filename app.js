@@ -107,8 +107,8 @@ function renderMainContent() {
       <div class="card">
         <div class="card-header">
           <div>
-            <div class="card-title">เอกสาร Outbound DC รายวัน</div>
-            <div class="card-subtitle">จำนวนเอกสารทั้งหมดจาก data outbound DC ต่อวัน</div>
+            <div class="card-title">เอกสารขาด/เกิน รายวัน</div>
+            <div class="card-subtitle">จำนวนเอกสารที่มีการขาด/เกินต่อวัน</div>
           </div>
         </div>
         <div class="card-body" style="height:180px">
@@ -167,7 +167,7 @@ async function loadData() {
     setData(allData, shortageData, diffResult.rows, kpis);
 
     renderKPIs(kpis);
-    renderCharts(allData);
+    renderCharts(shortageData);
     renderCaseCards(kpis);
     renderBranchSummary(shortageData);
     updateLastUpdate();
@@ -292,7 +292,7 @@ function renderDailyChart(data) {
     data: {
       labels,
       datasets: [{
-        label: 'เอกสาร Outbound DC',
+        label: 'เอกสารขาด/เกิน',
         data: values,
         backgroundColor: accent + '55',
         borderColor: accent,
