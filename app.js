@@ -453,19 +453,45 @@ function renderBranchSummary(shortageData) {
   }
 
   const summaries = Object.values(byBranch).map(b => ({
-    branch:   b.branch,
-    docCount: b.docs.length,
-    sumShort: b.docs.reduce((s, d) => s + (d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort), 0),
-    sumOver:  b.docs.reduce((s, d) => s + (d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver),  0),
-    r008Done: b.docs.filter(d => d.r008).length,
-    r008None: b.docs.filter(d => !d.r008).length,
-    docs:     b.docs,
+    branch:        b.branch,
+    docCount:      b.docs.length,
+    sumShort:      b.docs.reduce((s, d) => s + (d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort), 0),
+    sumOver:       b.docs.reduce((s, d) => s + (d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver),  0),
+    r008Done:      b.docs.filter(d => d.r008).length,
+    r008None:      b.docs.filter(d => !d.r008).length,
+    totalDiffItems: b.docs.reduce((s, d) => s + d.diffItems.length, 0),
+    wh1:           b.docs.filter(d => d.warehouse.includes('WH1')).length,
+    wh2:           b.docs.filter(d => d.warehouse.includes('WH2')).length,
+    wh3:           b.docs.filter(d => d.warehouse.includes('WH3')).length,
+    latestDiff:    b.docs.reduce((latest, d) => {
+      if (!d.diffSaveTime) return latest;
+      return !latest || d.diffSaveTime > latest ? d.diffSaveTime : latest;
+    }, null),
+    docs:          b.docs,
   })).sort((a, b) => b.docCount - a.docCount);
 
-  const totalShort = summaries.reduce((s, b) => s + b.sumShort, 0);
-  const totalOver  = summaries.reduce((s, b) => s + b.sumOver,  0);
-  const totalR008  = summaries.reduce((s, b) => s + b.r008Done, 0);
-  const totalNone  = summaries.reduce((s, b) => s + b.r008None, 0);
+  const totalShort     = summaries.reduce((s, b) => s + b.sumShort, 0);
+  const totalOver      = summaries.reduce((s, b) => s + b.sumOver,  0);
+  const totalR008      = summaries.reduce((s, b) => s + b.r008Done, 0);
+  const totalNone      = summaries.reduce((s, b) => s + b.r008None, 0);
+  const totalDiffItems = summaries.reduce((s, b) => s + b.totalDiffItems, 0);
+  const totalWH1       = summaries.reduce((s, b) => s + b.wh1, 0);
+  const totalWH2       = summaries.reduce((s, b) => s + b.wh2, 0);
+  const totalWH3       = summaries.reduce((s, b) => s + b.wh3, 0);
+
+  const ageBadge = (dt) => {
+    if (!dt) return `<span class="td-muted">—</span>`;
+    const days = daysAgo(dt);
+    const ageCls = days === null ? 'other' : days <= 3 ? 'age-ok' : days <= 7 ? 'age-warn' : 'age-old';
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+      <span class="age-badge ${ageCls}">${days ?? '?'} วัน</span>
+      <span style="font-size:10px;color:var(--text-subtle);font-family:var(--font-mono)">${formatDate(dt)}</span>
+    </div>`;
+  };
+
+  const whCell = n => n > 0
+    ? `<span style="font-family:var(--font-mono);font-size:12px;font-weight:600">${n}</span>`
+    : `<span class="td-muted">—</span>`;
 
   wrap.innerHTML = `
     <div style="padding:12px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">
@@ -479,8 +505,13 @@ function renderBranchSummary(shortageData) {
         <thead><tr>
           <th>สาขา</th>
           <th class="td-center">จำนวนเอกสาร</th>
+          <th class="td-center">WH1</th>
+          <th class="td-center">WH2</th>
+          <th class="td-center">WH3</th>
           <th class="td-center">รวมขาด (ชิ้น)</th>
           <th class="td-center">รวมเกิน (ชิ้น)</th>
+          <th class="td-center">รวม Diff</th>
+          <th class="td-center">วันล่าช้า</th>
           <th class="td-center">R008 แล้ว</th>
           <th class="td-center">ยังไม่ R008</th>
         </tr></thead>
@@ -491,12 +522,19 @@ function renderBranchSummary(shortageData) {
               <td class="td-center">
                 <span style="font-family:var(--font-mono);font-weight:700">${formatNum(b.docCount)}</span>
               </td>
+              <td class="td-center">${whCell(b.wh1)}</td>
+              <td class="td-center">${whCell(b.wh2)}</td>
+              <td class="td-center">${whCell(b.wh3)}</td>
               <td class="td-center">
                 ${b.sumShort > 0 ? `<span class="diff-badge short">${formatNum(b.sumShort)}</span>` : `<span class="td-muted">—</span>`}
               </td>
               <td class="td-center">
                 ${b.sumOver > 0 ? `<span class="diff-badge over">${formatNum(b.sumOver)}</span>` : `<span class="td-muted">—</span>`}
               </td>
+              <td class="td-center">
+                ${b.totalDiffItems > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${b.totalDiffItems}</span>` : `<span class="td-muted">—</span>`}
+              </td>
+              <td class="td-center">${ageBadge(b.latestDiff)}</td>
               <td class="td-center">
                 ${b.r008Done > 0 ? `<span class="diff-badge other" style="background:var(--ok-dim);color:var(--ok-text)">${formatNum(b.r008Done)}</span>` : `<span class="td-muted">—</span>`}
               </td>
@@ -510,8 +548,13 @@ function renderBranchSummary(shortageData) {
           <tr style="font-weight:700;border-top:2px solid var(--border)">
             <td style="color:var(--text-muted);font-size:11px">รวมทั้งหมด</td>
             <td class="td-center"><span style="font-family:var(--font-mono)">${formatNum(shortageData.length)}</span></td>
+            <td class="td-center">${whCell(totalWH1)}</td>
+            <td class="td-center">${whCell(totalWH2)}</td>
+            <td class="td-center">${whCell(totalWH3)}</td>
             <td class="td-center">${totalShort > 0 ? `<span class="diff-badge short">${formatNum(totalShort)}</span>` : `<span class="td-muted">—</span>`}</td>
             <td class="td-center">${totalOver  > 0 ? `<span class="diff-badge over">${formatNum(totalOver)}</span>`   : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center">${totalDiffItems > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${totalDiffItems}</span>` : `<span class="td-muted">—</span>`}</td>
+            <td class="td-center"><span class="td-muted">—</span></td>
             <td class="td-center">${totalR008 > 0 ? `<span class="diff-badge other" style="background:var(--ok-dim);color:var(--ok-text)">${formatNum(totalR008)}</span>` : `<span class="td-muted">—</span>`}</td>
             <td class="td-center">${totalNone > 0 ? `<span class="diff-badge short">${formatNum(totalNone)}</span>` : `<span class="td-muted">—</span>`}</td>
           </tr>
