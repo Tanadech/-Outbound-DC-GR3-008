@@ -360,15 +360,88 @@ function renderCaseCards(kpis) {
         <div class="case-card-sub">สาเหตุ R008: กำลังตรวจสอบ</div>
       </div>
     </div>
-    <div class="case-card case-card--cleared">
+    <div class="case-card case-card--cleared" id="card-cleared" style="cursor:pointer" title="คลิกเพื่อดูรายการ">
       <div class="case-card-icon">✅</div>
       <div class="case-card-body">
         <div class="case-card-label">เคลียร์เคสแล้ว</div>
         <div class="case-card-value">${formatNum(kpis.clearedCases)}</div>
-        <div class="case-card-sub">เอกสารขาด/เกิน ที่มีผล R008 แล้ว</div>
+        <div class="case-card-sub">เอกสารขาด/เกิน ที่มีผล R008 แล้ว · คลิกดูรายการ</div>
       </div>
     </div>
   `;
+
+  document.getElementById('card-cleared')?.addEventListener('click', () => {
+    showClearedModal(kpis.clearedCasesList || []);
+  });
+}
+
+/* ============================================================
+   CLEARED CASES MODAL
+   ============================================================ */
+function showClearedModal(rows) {
+  document.getElementById('cleared-list-overlay')?.remove();
+
+  const r008Pill = r => {
+    if (!r) return '<span style="color:var(--text-subtle)">—</span>';
+    let cls = 's5';
+    if (r === 'ขาดจริง')      cls = 's0';
+    else if (r === 'ไม่ขาดได้ครบ') cls = 's2';
+    return `<span class="status-pill ${cls}">${escHtml(r)}</span>`;
+  };
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cleared-list-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:960px">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">✅ เคลียร์เคสแล้ว</div>
+          <div class="modal-docno">${formatNum(rows.length)} เคส &nbsp;·&nbsp; จำนวนขาด=0 / จำนวนเกิน=0 / มีสาเหตุ R008</div>
+        </div>
+        <button class="modal-close" id="cleared-list-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        ${rows.length === 0
+          ? `<div style="padding:48px;text-align:center;color:var(--text-muted);font-size:14px">ไม่มีข้อมูล</div>`
+          : `<div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>เลขที่เอกสาร</th>
+                  <th>ชื่อสาขา</th>
+                  <th>วันที่คิวงาน</th>
+                  <th>R008</th>
+                  <th>สาเหตุของ R008</th>
+                  <th>ผู้บันทึก R008</th>
+                  <th>วันที่บันทึก R008</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map(d => `<tr>
+                    <td class="td-mono">${escHtml(d.docNo)}</td>
+                    <td>${escHtml(d.branch)}</td>
+                    <td class="td-mono">${formatDate(d.queueDate)}</td>
+                    <td>${r008Pill(d.r008)}</td>
+                    <td>${escHtml(d.r008Reason || '—')}</td>
+                    <td class="td-muted">${escHtml(d.r008Rec || '—')}</td>
+                    <td class="td-mono">${formatDate(d.r008Date)}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('cleared-list-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
 }
 
 /* ============================================================
