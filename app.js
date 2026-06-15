@@ -328,7 +328,7 @@ function showClearedModal(rows) {
                   ${rows.map(d => {
                     const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
                     const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
-                    return `<tr>
+                    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer" title="คลิกดูรายละเอียด">
                       <td class="td-mono">${escHtml(d.docNo)}</td>
                       <td>${escHtml(d.branch)}</td>
                       <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
@@ -356,6 +356,12 @@ function showClearedModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('cleared-list-close')?.addEventListener('click', close);
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = rows.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
@@ -406,7 +412,7 @@ function showClearTodayModal(rows) {
                     const arriveKey = d.arriveDate ? formatDate(d.arriveDate) : null;
                     const r008Key   = d.r008Date   ? formatDate(d.r008Date)   : null;
                     const sameDay   = arriveKey && r008Key && arriveKey === r008Key;
-                    return `<tr${sameDay ? ' style="background:var(--ok-dim,rgba(34,197,94,.08))"' : ''}>
+                    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer${sameDay ? ';background:var(--ok-dim,rgba(34,197,94,.08))' : ''}" title="คลิกดูรายละเอียด">
                       <td class="td-mono">${escHtml(d.docNo)}</td>
                       <td>${escHtml(d.branch)}</td>
                       <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
@@ -436,6 +442,12 @@ function showClearTodayModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('clear-today-close')?.addEventListener('click', close);
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = rows.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
@@ -491,7 +503,7 @@ function showNotClearedModal(rows) {
                   ${rows.map(d => {
                     const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
                     const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
-                    return `<tr>
+                    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer" title="คลิกดูรายละเอียด">
                       <td class="td-mono">${escHtml(d.docNo)}</td>
                       <td>${escHtml(d.branch)}</td>
                       <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
@@ -519,6 +531,12 @@ function showNotClearedModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('not-cleared-close')?.addEventListener('click', close);
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = rows.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
@@ -566,7 +584,7 @@ function showClearedSameDayModal(rows) {
                   ${rows.map(d => {
                     const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
                     const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
-                    return `<tr>
+                    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer" title="คลิกดูรายละเอียด">
                       <td class="td-mono">${escHtml(d.docNo)}</td>
                       <td>${escHtml(d.branch)}</td>
                       <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
@@ -594,6 +612,12 @@ function showClearedSameDayModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('cleared-same-day-close')?.addEventListener('click', close);
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = rows.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
@@ -641,7 +665,7 @@ function showClearedCrossDayModal(rows) {
                   ${rows.map(d => {
                     const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
                     const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
-                    return `<tr>
+                    return `<tr data-doc="${escHtml(d.docNo)}" style="cursor:pointer" title="คลิกดูรายละเอียด">
                       <td class="td-mono">${escHtml(d.docNo)}</td>
                       <td>${escHtml(d.branch)}</td>
                       <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
@@ -669,6 +693,12 @@ function showClearedCrossDayModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('cleared-cross-day-close')?.addEventListener('click', close);
+  overlay.querySelectorAll('tbody tr[data-doc]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const row = rows.find(d => d.docNo === tr.dataset.doc);
+      if (row) openModal(row);
+    });
+  });
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
