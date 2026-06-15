@@ -101,24 +101,6 @@ function renderMainContent() {
       <stat-card label="กำลังโหลด…" value="—" color="grey" icon="⏳"></stat-card>
     </div>
 
-    <!-- Charts + Summary cards -->
-    <div class="charts-row" id="charts-row" style="display:none">
-      <!-- Left: daily bar chart -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <div class="card-title">เอกสารขาด/เกิน รายวัน</div>
-            <div class="card-subtitle">จำนวนเอกสารที่มีการขาด/เกินต่อวัน</div>
-          </div>
-        </div>
-        <div class="card-body" style="height:180px">
-          <canvas id="chart-daily" style="width:100%;height:100%"></canvas>
-        </div>
-      </div>
-      <!-- Right: case management cards -->
-      <div class="case-cards-col" id="case-cards-col"></div>
-    </div>
-
     <!-- Main table — branch summary -->
     <div class="card" id="main-card" style="padding:0;overflow:hidden">
       <div id="branch-summary-wrap" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden"></div>
@@ -167,12 +149,8 @@ async function loadData() {
     setData(allData, shortageData, diffResult.rows, kpis);
 
     renderKPIs(kpis);
-    renderCharts(shortageData);
-    renderCaseCards(kpis);
     renderBranchSummary(shortageData);
     updateLastUpdate();
-
-    document.getElementById('charts-row').style.display = '';
 
   } catch (err) {
     console.error(err);
@@ -250,127 +228,6 @@ function renderKPIs(kpis) {
   `).join('');
 
   grid.querySelector('#kpi-cleared')?.addEventListener('click', () => {
-    showClearedModal(kpis.clearedCasesList || []);
-  });
-}
-
-/* ============================================================
-   CHARTS
-   ============================================================ */
-function renderCharts(shortageData) {
-  if (!window.Chart) return;
-  renderDailyChart(shortageData);
-}
-
-function getTheme() {
-  const isDark = state.theme !== 'light';
-  return {
-    isDark,
-    text:      isDark ? '#9db5cc' : '#637381',
-    grid:      isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)',
-    tooltipBg: isDark ? '#0a1628' : '#ffffff',
-    tooltipFg: isDark ? '#f1f5f9' : '#1C252E',
-    brd:       isDark ? 'rgba(56,189,248,.3)' : 'rgba(253,169,45,.3)',
-  };
-}
-
-
-function renderDailyChart(data) {
-  const ctx = document.getElementById('chart-daily');
-  if (!ctx) return;
-
-  const byDate = {};
-  for (const d of data) {
-    if (!d.queueDateKey) continue;
-    byDate[d.queueDateKey] = (byDate[d.queueDateKey] ?? 0) + 1;
-  }
-  const sorted = Object.entries(byDate).sort(([a], [b]) => a.localeCompare(b));
-  const labels = sorted.map(([k]) =>
-    new Date(k).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' })
-  );
-  const values = sorted.map(([, v]) => v);
-  const t = getTheme();
-  const accent = t.isDark ? '#f87171' : '#FF5630';
-
-  if (ctx._chart) ctx._chart.destroy();
-  ctx._chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'เอกสารขาด/เกิน',
-        data: values,
-        backgroundColor: accent + '55',
-        borderColor: accent,
-        borderWidth: 1.5,
-        borderRadius: 3,
-        hoverBackgroundColor: accent + 'aa',
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: t.tooltipBg, titleColor: t.tooltipFg, bodyColor: t.tooltipFg,
-          borderColor: t.brd, borderWidth: 1,
-          callbacks: { label: c => ` ${c.parsed.y} เอกสาร` },
-        },
-      },
-      scales: {
-        x: { ticks: { color: t.text, font: { size: 10, family: "'Sarabun',sans-serif" }, maxRotation: 45 }, grid: { color: t.grid } },
-        y: { ticks: { color: t.text, font: { size: 10, family: "'Sarabun',sans-serif" }, stepSize: 1 }, grid: { color: t.grid }, beginAtZero: true },
-      },
-    },
-  });
-}
-
-/* ============================================================
-   CASE MANAGEMENT CARDS
-   ============================================================ */
-function renderCaseCards(kpis) {
-  const col = document.getElementById('case-cards-col');
-  if (!col) return;
-
-  col.innerHTML = `
-    <!-- Row 1 -->
-    <div class="case-card case-card--urgent">
-      <div class="case-card-icon">⏰</div>
-      <div class="case-card-body">
-        <div class="case-card-label">ต้องเคลียร์เคสภายในวัน</div>
-        <div class="case-card-value">${formatNum(kpis.clearToday)}</div>
-        <div class="case-card-sub">เอกสารที่บันทึก Diff วันนี้</div>
-      </div>
-    </div>
-    <div class="case-card case-card--pending">
-      <div class="case-card-icon">🚨</div>
-      <div class="case-card-body">
-        <div class="case-card-label">ยังไม่ได้เคลียร์</div>
-        <div class="case-card-value">${formatNum(kpis.notCleared)}</div>
-        <div class="case-card-sub">เอกสารขาด/เกินที่ยังไม่มี R008</div>
-      </div>
-    </div>
-    <!-- Row 2 -->
-    <div class="case-card case-card--waiting">
-      <div class="case-card-icon">🔍</div>
-      <div class="case-card-body">
-        <div class="case-card-label">รอเคลียร์เคส</div>
-        <div class="case-card-value">${formatNum(kpis.waitingClear)}</div>
-        <div class="case-card-sub">สาเหตุ R008: กำลังตรวจสอบ</div>
-      </div>
-    </div>
-    <div class="case-card case-card--cleared" id="card-cleared" style="cursor:pointer" title="คลิกเพื่อดูรายการ">
-      <div class="case-card-icon">✅</div>
-      <div class="case-card-body">
-        <div class="case-card-label">เคลียร์เคสแล้ว</div>
-        <div class="case-card-value">${formatNum(kpis.clearedCases)}</div>
-        <div class="case-card-sub">เอกสารขาด/เกิน ที่มีผล R008 แล้ว · คลิกดูรายการ</div>
-      </div>
-    </div>
-  `;
-
-  document.getElementById('card-cleared')?.addEventListener('click', () => {
     showClearedModal(kpis.clearedCasesList || []);
   });
 }
