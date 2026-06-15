@@ -302,20 +302,36 @@ function showClearedModal(rows) {
                 <thead><tr>
                   <th>เลขที่เอกสาร</th>
                   <th>ชื่อสาขา</th>
-                  <th>วันที่คิวงาน</th>
+                  <th class="td-center">คลัง</th>
+                  <th class="td-center">วันที่คิวงาน</th>
+                  <th class="td-center">ขาด (ชิ้น)</th>
+                  <th class="td-center">เกิน (ชิ้น)</th>
                   <th>สาเหตุ R008</th>
                   <th>ผู้บันทึก R008</th>
-                  <th>วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">รายการ Diff</th>
+                  <th class="td-center">วันที่บันทึก Diff</th>
                 </tr></thead>
                 <tbody>
-                  ${rows.map(d => `<tr>
-                    <td class="td-mono">${escHtml(d.docNo)}</td>
-                    <td>${escHtml(d.branch)}</td>
-                    <td class="td-mono">${formatDate(d.queueDate)}</td>
-                    <td>${escHtml(d.r008Reason || '—')}</td>
-                    <td class="td-muted">${escHtml(d.r008Rec || '—')}</td>
-                    <td class="td-mono">${formatDate(d.r008Date)}</td>
-                  </tr>`).join('')}
+                  ${rows.map(d => {
+                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    return `<tr>
+                      <td class="td-mono">${escHtml(d.docNo)}</td>
+                      <td>${escHtml(d.branch)}</td>
+                      <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
+                      <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
+                      <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
+                      <td>${escHtml(d.r008Reason || '—')}</td>
+                      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.r008Date ? formatDate(d.r008Date) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.arriveDate ? formatDate(d.arriveDate) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
+                    </tr>`;
+                  }).join('')}
                 </tbody>
               </table>
             </div>`
@@ -365,14 +381,17 @@ function showClearTodayModal(rows) {
                   <th class="td-center">วันที่คิวงาน</th>
                   <th class="td-center">ขาด (ชิ้น)</th>
                   <th class="td-center">เกิน (ชิ้น)</th>
-                  <th class="td-center">รายการ Diff</th>
-                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th>สาเหตุ R008</th>
+                  <th>ผู้บันทึก R008</th>
                   <th class="td-center">วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">รายการ Diff</th>
+                  <th class="td-center">วันที่บันทึก Diff</th>
                 </tr></thead>
                 <tbody>
                   ${rows.map(d => {
-                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
-                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    const shortVal  = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal   = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
                     const arriveKey = d.arriveDate ? formatDate(d.arriveDate) : null;
                     const r008Key   = d.r008Date   ? formatDate(d.r008Date)   : null;
                     const sameDay   = arriveKey && r008Key && arriveKey === r008Key;
@@ -383,11 +402,14 @@ function showClearTodayModal(rows) {
                       <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
                       <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
-                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
-                      <td class="td-center td-mono" style="font-size:11px">${arriveKey ?? '<span class="td-muted">—</span>'}</td>
+                      <td>${escHtml(d.r008Reason || '—')}</td>
+                      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center td-mono" style="font-size:11px${sameDay ? ';color:var(--ok-text);font-weight:600' : ''}">
                         ${r008Key ? (sameDay ? `🎯 ${r008Key}` : r008Key) : '<span class="td-muted">—</span>'}
                       </td>
+                      <td class="td-center td-mono" style="font-size:11px">${arriveKey ?? '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
                     </tr>`;
                   }).join('')}
                 </tbody>
@@ -448,7 +470,10 @@ function showNotClearedModal(rows) {
                   <th class="td-center">ขาด (ชิ้น)</th>
                   <th class="td-center">เกิน (ชิ้น)</th>
                   <th>สาเหตุ R008</th>
-                  <th class="td-center">ผู้บันทึก R008</th>
+                  <th>ผู้บันทึก R008</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">รายการ Diff</th>
                   <th class="td-center">วันที่บันทึก Diff</th>
                 </tr></thead>
                 <tbody>
@@ -463,7 +488,10 @@ function showNotClearedModal(rows) {
                       <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
                       <td>${escHtml(d.r008Reason || '—')}</td>
-                      <td class="td-center td-muted">${escHtml(d.r008Rec || '—')}</td>
+                      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.r008Date ? formatDate(d.r008Date) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.arriveDate ? formatDate(d.arriveDate) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
                     </tr>`;
                   }).join('')}
@@ -517,9 +545,11 @@ function showClearedSameDayModal(rows) {
                   <th class="td-center">ขาด (ชิ้น)</th>
                   <th class="td-center">เกิน (ชิ้น)</th>
                   <th>สาเหตุ R008</th>
-                  <th class="td-center">วันที่ถึงสาขา</th>
-                  <th class="td-center">วันที่บันทึก R008</th>
                   <th>ผู้บันทึก R008</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">รายการ Diff</th>
+                  <th class="td-center">วันที่บันทึก Diff</th>
                 </tr></thead>
                 <tbody>
                   ${rows.map(d => {
@@ -533,9 +563,11 @@ function showClearedSameDayModal(rows) {
                       <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
                       <td>${escHtml(d.r008Reason || '—')}</td>
-                      <td class="td-center td-mono" style="font-size:11px">${formatDate(d.arriveDate)}</td>
+                      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : '<span class="td-muted">—</span>'}</td>
                       <td class="td-center td-mono" style="font-size:11px;color:var(--ok-text);font-weight:600">🎯 ${formatDate(d.r008Date)}</td>
-                      <td class="td-muted">${escHtml(d.r008Rec || '—')}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.arriveDate ? formatDate(d.arriveDate) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
                     </tr>`;
                   }).join('')}
                 </tbody>
