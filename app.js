@@ -197,6 +197,14 @@ function renderKPIs(kpis) {
       sub:   'R008 ตรงกับวันที่ถึงสาขา · คลิกดูรายการ',
     },
     {
+      id:    'kpi-cleared-cross-day',
+      label: 'เคลียร์เคสข้ามวันแล้ว',
+      value: formatNum(kpis.clearedCrossDay),
+      color: 'info',
+      icon:  '📅',
+      sub:   'R008 ไม่ตรงกับวันที่ถึงสาขา · คลิกดูรายการ',
+    },
+    {
       id:    'kpi-not-cleared',
       label: 'ยังไม่ได้เคลียร์',
       value: formatNum(kpis.notCleared),
@@ -239,7 +247,7 @@ function renderKPIs(kpis) {
   ];
 
   const whIds       = new Set(['kpi-wh1', 'kpi-wh2', 'kpi-wh3']);
-  const popupIds    = new Set(['kpi-cleared', 'kpi-clear-today', 'kpi-cleared-same-day', 'kpi-not-cleared']);
+  const popupIds    = new Set(['kpi-cleared', 'kpi-clear-today', 'kpi-cleared-same-day', 'kpi-cleared-cross-day', 'kpi-not-cleared']);
 
   grid.innerHTML = cards.map(c => {
     const clickable = popupIds.has(c.id) || whIds.has(c.id);
@@ -258,6 +266,9 @@ function renderKPIs(kpis) {
   });
   grid.querySelector('#kpi-cleared-same-day')?.addEventListener('click', () => {
     showClearedSameDayModal(kpis.clearedSameDayList || []);
+  });
+  grid.querySelector('#kpi-cleared-cross-day')?.addEventListener('click', () => {
+    showClearedCrossDayModal(kpis.clearedCrossDayList || []);
   });
   grid.querySelector('#kpi-not-cleared')?.addEventListener('click', () => {
     showNotClearedModal(kpis.notClearedList || []);
@@ -583,6 +594,81 @@ function showClearedSameDayModal(rows) {
   const close = () => overlay.remove();
   overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
   document.getElementById('cleared-same-day-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
+/* ============================================================
+   CLEARED CROSS-DAY MODAL  (📅 เคลียร์เคสข้ามวันแล้ว)
+   ============================================================ */
+function showClearedCrossDayModal(rows) {
+  document.getElementById('cleared-cross-day-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cleared-cross-day-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:1400px;width:96vw">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">📅 เคลียร์เคสข้ามวันแล้ว</div>
+          <div class="modal-docno">${formatNum(rows.length)} เคส &nbsp;·&nbsp; วันที่บันทึก R008 ไม่ตรงกับวันที่ถึงสาขา</div>
+        </div>
+        <button class="modal-close" id="cleared-cross-day-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        ${rows.length === 0
+          ? `<div style="padding:48px;text-align:center;color:var(--text-muted);font-size:14px">ไม่มีข้อมูล</div>`
+          : `<div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>เลขที่เอกสาร</th>
+                  <th>ชื่อสาขา</th>
+                  <th class="td-center">คลัง</th>
+                  <th class="td-center">วันที่คิวงาน</th>
+                  <th class="td-center">ขาด (ชิ้น)</th>
+                  <th class="td-center">เกิน (ชิ้น)</th>
+                  <th>สาเหตุ R008</th>
+                  <th>ผู้บันทึก R008</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">รายการ Diff</th>
+                  <th class="td-center">วันที่บันทึก Diff</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map(d => {
+                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    return `<tr>
+                      <td class="td-mono">${escHtml(d.docNo)}</td>
+                      <td>${escHtml(d.branch)}</td>
+                      <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
+                      <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
+                      <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
+                      <td>${escHtml(d.r008Reason || '—')}</td>
+                      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px;color:var(--info-text);font-weight:600">📅 ${formatDate(d.r008Date)}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.arriveDate ? formatDate(d.arriveDate) : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('cleared-cross-day-close')?.addEventListener('click', close);
   const onEsc = e => {
     if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
   };
