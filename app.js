@@ -286,7 +286,7 @@ function showClearedModal(rows) {
   overlay.id = 'cleared-list-overlay';
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:960px">
+    <div class="modal-box" style="max-width:1400px;width:96vw">
       <div class="modal-header">
         <div class="modal-header-info">
           <div class="modal-title">✅ เคลียร์เคสแล้ว</div>
@@ -361,7 +361,7 @@ function showClearTodayModal(rows) {
   overlay.id = 'clear-today-overlay';
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:1020px">
+    <div class="modal-box" style="max-width:1400px;width:96vw">
       <div class="modal-header">
         <div class="modal-header-info">
           <div class="modal-title">⏰ ต้องเคลียร์เคสภายในวัน</div>
@@ -449,7 +449,7 @@ function showNotClearedModal(rows) {
   overlay.id = 'not-cleared-overlay';
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:1100px">
+    <div class="modal-box" style="max-width:1400px;width:96vw">
       <div class="modal-header">
         <div class="modal-header-info">
           <div class="modal-title">🚨 ยังไม่ได้เคลียร์</div>
@@ -524,7 +524,7 @@ function showClearedSameDayModal(rows) {
   overlay.id = 'cleared-same-day-overlay';
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:1060px">
+    <div class="modal-box" style="max-width:1400px;width:96vw">
       <div class="modal-header">
         <div class="modal-header-info">
           <div class="modal-title">🎯 เคลียร์เคสภายในวันแล้ว</div>
