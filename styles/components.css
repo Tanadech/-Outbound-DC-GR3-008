@@ -5,7 +5,8 @@
 /* ============================================================
    STAT CARD
    ============================================================ */
-stat-card, filter-bar { display: block; }
+stat-card, filter-bar { display: block; height: 100%; }
+stat-card > * { height: 100%; }
 
 /* data-table fills the card and scrolls internally */
 data-table {
@@ -25,6 +26,9 @@ data-table {
   overflow: hidden;
   transition: transform var(--trans), background var(--trans);
   cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .stat-card::before {
   content: '';

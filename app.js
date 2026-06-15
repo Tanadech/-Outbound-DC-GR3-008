@@ -15,6 +15,8 @@ import './components/filter-bar.js';
 import './components/data-table.js';
 import './modals/detail-modal.js';
 
+let activeWhFilter = null;
+let _shortageData  = [];
 
 /* ============================================================
    BOOTSTRAP
@@ -147,6 +149,8 @@ async function loadData() {
     const kpis         = computeKPIs(allData, shortageData, diffResult.rows);
 
     setData(allData, shortageData, diffResult.rows, kpis);
+    _shortageData = shortageData;
+    activeWhFilter = null;
 
     renderKPIs(kpis);
     renderBranchSummary(shortageData);
@@ -177,18 +181,28 @@ function renderKPIs(kpis) {
       sub:   `จาก ${formatNum(kpis.totalDocs)} เอกสารทั้งหมด`,
     },
     {
+      id:    'kpi-clear-today',
       label: 'ต้องเคลียร์เคสภายในวัน',
       value: formatNum(kpis.clearToday),
       color: 'warn',
       icon:  '⏰',
-      sub:   'เอกสารที่บันทึก Diff วันนี้',
+      sub:   'เอกสารที่บันทึก Diff วันนี้ · คลิกดูรายการ',
     },
     {
+      id:    'kpi-cleared-same-day',
+      label: 'เคลียร์เคสภายในวันแล้ว',
+      value: formatNum(kpis.clearedSameDay),
+      color: 'ok',
+      icon:  '🎯',
+      sub:   'R008 ตรงกับวันที่ถึงสาขา · คลิกดูรายการ',
+    },
+    {
+      id:    'kpi-not-cleared',
       label: 'ยังไม่ได้เคลียร์',
       value: formatNum(kpis.notCleared),
       color: 'danger',
       icon:  '🚨',
-      sub:   'เอกสารขาด/เกินที่ยังไม่มี R008',
+      sub:   'เอกสารขาด/เกินที่ยังไม่มี R008 · คลิกดูรายการ',
     },
     {
       id:    'kpi-cleared',
@@ -199,37 +213,59 @@ function renderKPIs(kpis) {
       sub:   'เอกสารขาด/เกิน ที่มีผล R008 แล้ว · คลิกดูรายการ',
     },
     {
+      id:    'kpi-wh1',
       label: 'เอกสารขาด/เกิน คลัง WH1',
       value: formatNum(kpis.wh1Docs),
       color: 'accent',
       icon:  '📦',
-      sub:   'เอกสารที่ผ่านคลัง WH1',
+      sub:   'คลิกเพื่อกรองสาขา WH1',
     },
     {
+      id:    'kpi-wh2',
       label: 'เอกสารขาด/เกิน คลัง WH2',
       value: formatNum(kpis.wh2Docs),
       color: 'info',
       icon:  '📦',
-      sub:   'เอกสารที่ผ่านคลัง WH2',
+      sub:   'คลิกเพื่อกรองสาขา WH2',
     },
     {
+      id:    'kpi-wh3',
       label: 'เอกสารขาด/เกิน คลัง WH3',
       value: formatNum(kpis.wh3Docs),
       color: 'purple',
       icon:  '📦',
-      sub:   'เอกสารที่ผ่านคลัง WH3',
+      sub:   'คลิกเพื่อกรองสาขา WH3',
     },
   ];
 
-  grid.innerHTML = cards.map(c => `
-    <stat-card ${c.id ? `id="${c.id}"` : ''} label="${c.label}" value="${c.value}"
-               color="${c.color}" icon="${c.icon}" sub="${c.sub}"
-               ${c.id === 'kpi-cleared' ? 'style="cursor:pointer" title="คลิกเพื่อดูรายการ"' : ''}></stat-card>
-  `).join('');
+  const whIds       = new Set(['kpi-wh1', 'kpi-wh2', 'kpi-wh3']);
+  const popupIds    = new Set(['kpi-cleared', 'kpi-clear-today', 'kpi-cleared-same-day', 'kpi-not-cleared']);
+
+  grid.innerHTML = cards.map(c => {
+    const clickable = popupIds.has(c.id) || whIds.has(c.id);
+    const titleAttr = whIds.has(c.id) ? 'คลิกเพื่อกรองสาขาตามคลัง' : 'คลิกเพื่อดูรายการ';
+    return `
+      <stat-card ${c.id ? `id="${c.id}"` : ''} label="${c.label}" value="${c.value}"
+                 color="${c.color}" icon="${c.icon}" sub="${c.sub}"
+                 ${clickable ? `style="cursor:pointer" title="${titleAttr}"` : ''}></stat-card>`;
+  }).join('');
 
   grid.querySelector('#kpi-cleared')?.addEventListener('click', () => {
     showClearedModal(kpis.clearedCasesList || []);
   });
+  grid.querySelector('#kpi-clear-today')?.addEventListener('click', () => {
+    showClearTodayModal(kpis.clearTodayList || []);
+  });
+  grid.querySelector('#kpi-cleared-same-day')?.addEventListener('click', () => {
+    showClearedSameDayModal(kpis.clearedSameDayList || []);
+  });
+  grid.querySelector('#kpi-not-cleared')?.addEventListener('click', () => {
+    showNotClearedModal(kpis.notClearedList || []);
+  });
+
+  grid.querySelector('#kpi-wh1')?.addEventListener('click', () => handleWhFilter('WH1'));
+  grid.querySelector('#kpi-wh2')?.addEventListener('click', () => handleWhFilter('WH2'));
+  grid.querySelector('#kpi-wh3')?.addEventListener('click', () => handleWhFilter('WH3'));
 }
 
 /* ============================================================
@@ -267,8 +303,7 @@ function showClearedModal(rows) {
                   <th>เลขที่เอกสาร</th>
                   <th>ชื่อสาขา</th>
                   <th>วันที่คิวงาน</th>
-                  <th>R008</th>
-                  <th>สาเหตุของ R008</th>
+                  <th>สาเหตุ R008</th>
                   <th>ผู้บันทึก R008</th>
                   <th>วันที่บันทึก R008</th>
                 </tr></thead>
@@ -277,7 +312,6 @@ function showClearedModal(rows) {
                     <td class="td-mono">${escHtml(d.docNo)}</td>
                     <td>${escHtml(d.branch)}</td>
                     <td class="td-mono">${formatDate(d.queueDate)}</td>
-                    <td>${r008Pill(d.r008)}</td>
                     <td>${escHtml(d.r008Reason || '—')}</td>
                     <td class="td-muted">${escHtml(d.r008Rec || '—')}</td>
                     <td class="td-mono">${formatDate(d.r008Date)}</td>
@@ -302,9 +336,260 @@ function showClearedModal(rows) {
 }
 
 /* ============================================================
+   CLEAR TODAY MODAL  (⏰ ต้องเคลียร์เคสภายในวัน)
+   ============================================================ */
+function showClearTodayModal(rows) {
+  document.getElementById('clear-today-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'clear-today-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:1020px">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">⏰ ต้องเคลียร์เคสภายในวัน</div>
+          <div class="modal-docno">${formatNum(rows.length)} เคส &nbsp;·&nbsp; เอกสารที่บันทึก Diff วันนี้</div>
+        </div>
+        <button class="modal-close" id="clear-today-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        ${rows.length === 0
+          ? `<div style="padding:48px;text-align:center;color:var(--text-muted);font-size:14px">ไม่มีข้อมูล</div>`
+          : `<div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>เลขที่เอกสาร</th>
+                  <th>ชื่อสาขา</th>
+                  <th class="td-center">คลัง</th>
+                  <th class="td-center">วันที่คิวงาน</th>
+                  <th class="td-center">ขาด (ชิ้น)</th>
+                  <th class="td-center">เกิน (ชิ้น)</th>
+                  <th class="td-center">รายการ Diff</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map(d => {
+                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    const arriveKey = d.arriveDate ? formatDate(d.arriveDate) : null;
+                    const r008Key   = d.r008Date   ? formatDate(d.r008Date)   : null;
+                    const sameDay   = arriveKey && r008Key && arriveKey === r008Key;
+                    return `<tr${sameDay ? ' style="background:var(--ok-dim,rgba(34,197,94,.08))"' : ''}>
+                      <td class="td-mono">${escHtml(d.docNo)}</td>
+                      <td>${escHtml(d.branch)}</td>
+                      <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
+                      <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
+                      <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${arriveKey ?? '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center td-mono" style="font-size:11px${sameDay ? ';color:var(--ok-text);font-weight:600' : ''}">
+                        ${r008Key ? (sameDay ? `🎯 ${r008Key}` : r008Key) : '<span class="td-muted">—</span>'}
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('clear-today-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
+/* ============================================================
+   NOT CLEARED MODAL  (🚨 ยังไม่ได้เคลียร์)
+   ============================================================ */
+function showNotClearedModal(rows) {
+  document.getElementById('not-cleared-overlay')?.remove();
+
+  const r008Pill = r => {
+    if (!r) return '<span style="color:var(--text-subtle)">—</span>';
+    let cls = 's5';
+    if (r === 'ขาดจริง')         cls = 's0';
+    else if (r === 'ไม่ขาดได้ครบ') cls = 's2';
+    return `<span class="status-pill ${cls}">${escHtml(r)}</span>`;
+  };
+
+  const overlay = document.createElement('div');
+  overlay.id = 'not-cleared-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:1100px">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">🚨 ยังไม่ได้เคลียร์</div>
+          <div class="modal-docno">${formatNum(rows.length)} เคส &nbsp;·&nbsp; เอกสารขาด/เกินที่ยังไม่มี R008 ผ่าน</div>
+        </div>
+        <button class="modal-close" id="not-cleared-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        ${rows.length === 0
+          ? `<div style="padding:48px;text-align:center;color:var(--text-muted);font-size:14px">ไม่มีข้อมูล</div>`
+          : `<div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>เลขที่เอกสาร</th>
+                  <th>ชื่อสาขา</th>
+                  <th class="td-center">คลัง</th>
+                  <th class="td-center">วันที่คิวงาน</th>
+                  <th class="td-center">ขาด (ชิ้น)</th>
+                  <th class="td-center">เกิน (ชิ้น)</th>
+                  <th>สาเหตุ R008</th>
+                  <th class="td-center">ผู้บันทึก R008</th>
+                  <th class="td-center">วันที่บันทึก Diff</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map(d => {
+                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    return `<tr>
+                      <td class="td-mono">${escHtml(d.docNo)}</td>
+                      <td>${escHtml(d.branch)}</td>
+                      <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
+                      <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
+                      <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
+                      <td>${escHtml(d.r008Reason || '—')}</td>
+                      <td class="td-center td-muted">${escHtml(d.r008Rec || '—')}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${d.diffSaveTime ? formatDate(d.diffSaveTime) : '<span class="td-muted">—</span>'}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('not-cleared-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
+/* ============================================================
+   CLEARED SAME-DAY MODAL  (🎯 เคลียร์เคสภายในวันแล้ว)
+   ============================================================ */
+function showClearedSameDayModal(rows) {
+  document.getElementById('cleared-same-day-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cleared-same-day-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:1060px">
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-title">🎯 เคลียร์เคสภายในวันแล้ว</div>
+          <div class="modal-docno">${formatNum(rows.length)} เคส &nbsp;·&nbsp; วันที่บันทึก R008 ตรงกับวันที่ถึงสาขา</div>
+        </div>
+        <button class="modal-close" id="cleared-same-day-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+        ${rows.length === 0
+          ? `<div style="padding:48px;text-align:center;color:var(--text-muted);font-size:14px">ไม่มีข้อมูล</div>`
+          : `<div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>เลขที่เอกสาร</th>
+                  <th>ชื่อสาขา</th>
+                  <th class="td-center">คลัง</th>
+                  <th class="td-center">วันที่คิวงาน</th>
+                  <th class="td-center">ขาด (ชิ้น)</th>
+                  <th class="td-center">เกิน (ชิ้น)</th>
+                  <th>สาเหตุ R008</th>
+                  <th class="td-center">วันที่ถึงสาขา</th>
+                  <th class="td-center">วันที่บันทึก R008</th>
+                  <th>ผู้บันทึก R008</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map(d => {
+                    const shortVal = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
+                    const overVal  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
+                    return `<tr>
+                      <td class="td-mono">${escHtml(d.docNo)}</td>
+                      <td>${escHtml(d.branch)}</td>
+                      <td class="td-center td-mono" style="color:var(--accent);font-weight:600">${escHtml(d.warehouse)}</td>
+                      <td class="td-center td-mono">${formatDate(d.queueDate)}</td>
+                      <td class="td-center">${shortVal > 0 ? `<span class="diff-badge short">${formatNum(shortVal)}</span>` : '<span class="td-muted">—</span>'}</td>
+                      <td class="td-center">${overVal  > 0 ? `<span class="diff-badge over">${formatNum(overVal)}</span>`   : '<span class="td-muted">—</span>'}</td>
+                      <td>${escHtml(d.r008Reason || '—')}</td>
+                      <td class="td-center td-mono" style="font-size:11px">${formatDate(d.arriveDate)}</td>
+                      <td class="td-center td-mono" style="font-size:11px;color:var(--ok-text);font-weight:600">🎯 ${formatDate(d.r008Date)}</td>
+                      <td class="td-muted">${escHtml(d.r008Rec || '—')}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.getElementById('cleared-same-day-close')?.addEventListener('click', close);
+  const onEsc = e => {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  };
+  document.addEventListener('keydown', onEsc);
+}
+
+/* ============================================================
+   WAREHOUSE FILTER (KPI cards → branch summary)
+   ============================================================ */
+function handleWhFilter(wh) {
+  activeWhFilter = activeWhFilter === wh ? null : wh;
+  updateWhKpiStyles();
+  const data = activeWhFilter
+    ? _shortageData.filter(d => d.primaryWarehouse === activeWhFilter)
+    : _shortageData;
+  renderBranchSummary(data, activeWhFilter);
+}
+
+function updateWhKpiStyles() {
+  const whIdMap = { WH1: 'kpi-wh1', WH2: 'kpi-wh2', WH3: 'kpi-wh3' };
+  Object.entries(whIdMap).forEach(([wh, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (activeWhFilter === wh) {
+      el.style.outline       = '3px solid var(--accent)';
+      el.style.outlineOffset = '3px';
+      el.style.borderRadius  = '12px';
+    } else {
+      el.style.outline       = '';
+      el.style.outlineOffset = '';
+      el.style.borderRadius  = '';
+    }
+  });
+}
+
+/* ============================================================
    BRANCH SUMMARY VIEW
    ============================================================ */
-function renderBranchSummary(shortageData) {
+function renderBranchSummary(shortageData, activeFilter = null) {
   const wrap = document.getElementById('branch-summary-wrap');
   if (!wrap) return;
 
@@ -323,9 +608,9 @@ function renderBranchSummary(shortageData) {
     r008Done:      b.docs.filter(d => d.r008Rec && d.r008Date && d.diffSaveTime).length,
     r008None:      b.docs.filter(d => !(d.r008Rec && d.r008Date && d.diffSaveTime)).length,
     totalDiffItems: b.docs.reduce((s, d) => s + d.diffItems.length, 0),
-    wh1:           b.docs.filter(d => d.warehouse.includes('WH1')).length,
-    wh2:           b.docs.filter(d => d.warehouse.includes('WH2')).length,
-    wh3:           b.docs.filter(d => d.warehouse.includes('WH3')).length,
+    wh1:           b.docs.filter(d => d.primaryWarehouse === 'WH1').length,
+    wh2:           b.docs.filter(d => d.primaryWarehouse === 'WH2').length,
+    wh3:           b.docs.filter(d => d.primaryWarehouse === 'WH3').length,
     latestDiff:    b.docs.reduce((latest, d) => {
       if (!d.diffSaveTime) return latest;
       return !latest || d.diffSaveTime > latest ? d.diffSaveTime : latest;
@@ -356,11 +641,19 @@ function renderBranchSummary(shortageData) {
     ? `<span style="font-family:var(--font-mono);font-size:12px;font-weight:600">${n}</span>`
     : `<span class="td-muted">—</span>`;
 
+  const filterBadge = activeFilter
+    ? `<button id="wh-filter-clear"
+         style="font-size:11px;padding:3px 10px;border:1.5px solid var(--accent);background:var(--accent-dim,rgba(99,102,241,.12));color:var(--accent);border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+         กรอง: <strong>${activeFilter}</strong> &nbsp;✕ ล้าง
+       </button>`
+    : '';
+
   wrap.innerHTML = `
     <div style="padding:12px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">
       <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;flex:1">
-        สาขาที่มีขาด/เกิน &nbsp;·&nbsp; ${summaries.length} สาขา
+        สาขาที่มีขาด/เกิน${activeFilter ? ` — คลัง ${activeFilter}` : ''} &nbsp;·&nbsp; ${summaries.length} สาขา
       </span>
+      ${filterBadge}
       <span style="font-size:11px;color:var(--text-subtle)">คลิกที่แถวสาขาเพื่อดูรายการเอกสาร</span>
     </div>
     <div class="table-wrap">
@@ -432,6 +725,10 @@ function renderBranchSummary(shortageData) {
     </div>
   `;
 
+  wrap.querySelector('#wh-filter-clear')?.addEventListener('click', () => {
+    handleWhFilter(activeWhFilter);
+  });
+
   wrap.querySelectorAll('tbody tr[data-idx]').forEach(tr => {
     tr.addEventListener('click', () => {
       const b = summaries[+tr.dataset.idx];
@@ -452,14 +749,6 @@ function showBranchDocsModal(docs, branchName) {
   const renderDocRow = d => {
     const shortN = d.totalDiffShort > 0 ? d.totalDiffShort : d.scanShort;
     const overN  = d.totalDiffOver  > 0 ? d.totalDiffOver  : d.scanOver;
-
-    let r008Cell;
-    if (!d.r008) {
-      r008Cell = `<span class="td-muted">—</span>`;
-    } else {
-      const cls = d.r008 === 'ขาดจริง' ? 'short' : d.r008 === 'ไม่ขาดได้ครบ' ? 'over' : 'other';
-      r008Cell = `<span class="diff-badge ${cls}">${escHtml(d.r008)}</span>`;
-    }
 
     let saveAgeCell;
     if (!d.diffSaveTime) {
@@ -482,9 +771,10 @@ function showBranchDocsModal(docs, branchName) {
       <td>${d.recRecv ? escHtml(truncate(String(d.recRecv), 20)) : `<span class="td-muted">—</span>`}</td>
       <td class="td-num td-right">${shortN > 0 ? `<span class="diff-badge short">${formatNum(shortN)}</span>` : `<span class="td-muted">—</span>`}</td>
       <td class="td-num td-right">${overN  > 0 ? `<span class="diff-badge over">${formatNum(overN)}</span>`   : `<span class="td-muted">—</span>`}</td>
-      <td class="td-center">${r008Cell}</td>
       <td>${d.r008Reason ? `<span style="font-size:11px">${escHtml(truncate(d.r008Reason, 30))}</span>` : `<span class="td-muted">—</span>`}</td>
-      <td class="td-muted">${d.r008Rec ? `<span style="font-size:11px">${escHtml(truncate(String(d.r008Rec), 20))}</span>` : `<span class="td-muted">—</span>`}</td>
+      <td class="td-muted" style="font-size:11px">${d.r008Rec ? escHtml(truncate(d.r008Rec, 20)) : `<span class="td-muted">—</span>`}</td>
+      <td class="td-center td-mono" style="font-size:11px">${d.r008Date ? formatDate(d.r008Date) : `<span class="td-muted">—</span>`}</td>
+      <td class="td-center td-mono" style="font-size:11px">${d.arriveDate ? formatDate(d.arriveDate) : `<span class="td-muted">—</span>`}</td>
       <td class="td-center">${d.diffItems.length > 0 ? `<span class="tab-count" style="background:var(--info-dim);color:var(--info-text)">${d.diffItems.length}</span>` : `<span class="td-muted">—</span>`}</td>
       <td class="td-center">${saveAgeCell}</td>
     </tr>`;
@@ -513,9 +803,10 @@ function showBranchDocsModal(docs, branchName) {
               <th>ผู้บันทึก สาขา</th>
               <th class="td-right">ขาด (ชิ้น)</th>
               <th class="td-right">เกิน (ชิ้น)</th>
-              <th class="td-center">R008</th>
               <th>สาเหตุ R008</th>
               <th>ผู้บันทึก R008</th>
+              <th class="td-center">วันที่บันทึก R008</th>
+              <th class="td-center">วันที่ถึงสาขา</th>
               <th class="td-center">รายการ Diff</th>
               <th class="td-center">วันที่บันทึก Diff</th>
             </tr></thead>
