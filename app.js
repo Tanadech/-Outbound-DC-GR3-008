@@ -199,53 +199,59 @@ function renderKPIs(kpis) {
       sub:   `จาก ${formatNum(kpis.totalDocs)} เอกสารทั้งหมด`,
     },
     {
-      label: 'รายการสินค้าขาด',
-      value: formatNum(kpis.totalDiffShort),
-      color: 'danger',
-      icon:  '📉',
-      sub:   `รวม ${formatNum(kpis.totalDiffQtyShort)} ชิ้น`,
-    },
-    {
-      label: 'รายการสินค้าเกิน',
-      value: formatNum(kpis.totalDiffOver),
+      label: 'ต้องเคลียร์เคสภายในวัน',
+      value: formatNum(kpis.clearToday),
       color: 'warn',
-      icon:  '📈',
-      sub:   `รวม ${formatNum(kpis.totalDiffQtyOver)} ชิ้น`,
+      icon:  '⏰',
+      sub:   'เอกสารที่บันทึก Diff วันนี้',
     },
     {
-      label: 'ไม่มีข้อมูลในระบบ',
-      value: formatNum(kpis.totalDiffOther),
-      color: 'grey',
-      icon:  '❓',
-      sub:   'รายการที่ระบบไม่รู้จัก',
+      label: 'ยังไม่ได้เคลียร์',
+      value: formatNum(kpis.notCleared),
+      color: 'danger',
+      icon:  '🚨',
+      sub:   'เอกสารขาด/เกินที่ยังไม่มี R008',
     },
     {
-      label: 'R008 — ขาดจริง',
-      value: formatNum(kpis.r008True),
-      color: 'purple',
-      icon:  '🔴',
-      sub:   'DC ยืนยันสินค้าขาดจริง',
-    },
-    {
-      label: 'R008 — ไม่ขาดได้ครบ',
-      value: formatNum(kpis.r008OK),
+      id:    'kpi-cleared',
+      label: 'เคลียร์เคสแล้ว',
+      value: formatNum(kpis.clearedCases),
       color: 'ok',
       icon:  '✅',
-      sub:   'นับครบในใบนับละเอียด',
+      sub:   'เอกสารขาด/เกิน ที่มีผล R008 แล้ว · คลิกดูรายการ',
     },
     {
-      label: 'Diff รวมทั้งหมด',
-      value: formatNum(kpis.totalDiffRows),
+      label: 'เอกสารขาด/เกิน คลัง WH1',
+      value: formatNum(kpis.wh1Docs),
       color: 'accent',
-      icon:  '🔍',
-      sub:   'รายการใน diff file',
+      icon:  '📦',
+      sub:   'เอกสารที่ผ่านคลัง WH1',
+    },
+    {
+      label: 'เอกสารขาด/เกิน คลัง WH2',
+      value: formatNum(kpis.wh2Docs),
+      color: 'info',
+      icon:  '📦',
+      sub:   'เอกสารที่ผ่านคลัง WH2',
+    },
+    {
+      label: 'เอกสารขาด/เกิน คลัง WH3',
+      value: formatNum(kpis.wh3Docs),
+      color: 'purple',
+      icon:  '📦',
+      sub:   'เอกสารที่ผ่านคลัง WH3',
     },
   ];
 
   grid.innerHTML = cards.map(c => `
-    <stat-card label="${c.label}" value="${c.value}" color="${c.color}"
-               icon="${c.icon}" sub="${c.sub}"></stat-card>
+    <stat-card ${c.id ? `id="${c.id}"` : ''} label="${c.label}" value="${c.value}"
+               color="${c.color}" icon="${c.icon}" sub="${c.sub}"
+               ${c.id === 'kpi-cleared' ? 'style="cursor:pointer" title="คลิกเพื่อดูรายการ"' : ''}></stat-card>
   `).join('');
+
+  grid.querySelector('#kpi-cleared')?.addEventListener('click', () => {
+    showClearedModal(kpis.clearedCasesList || []);
+  });
 }
 
 /* ============================================================
